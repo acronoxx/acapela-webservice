@@ -19,9 +19,6 @@
 
         <properties>
             <property name="jakarta.persistence.jdbc.driver" value="org.postgresql.Driver"/>
-            <property name="jakarta.persistence.jdbc.url" value="jdbc:postgresql://ep-cool-meadow-abdjwy2i-pooler.eu-west-2.aws.neon.tech:5432/neondb?sslmode=require&amp;channel_binding=require"/>
-            <property name="jakarta.persistence.jdbc.user" value="neondb_owner"/>
-            <property name="jakarta.persistence.jdbc.password" value="npg_8Wh7KaNnGCgl"/>
             <property name="eclipselink.ddl-generation" value="create-or-extend-tables"/>
         </properties>
     </persistence-unit>
