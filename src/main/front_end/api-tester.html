@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Tester | Fluid Mode</title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        :root {
+            --bg-base: #000000; --bg-sidebar: #0A0A0A; --bg-panel: #0A0A0A; --bg-input: #111111; --border: #222222;
+            --text-main: #EDEDED; --text-muted: #888888; --method-get: #10B981; --method-post: #3B82F6;
+            --method-put: #F59E0B; --method-delete: #EF4444; --font-mono: 'JetBrains Mono', monospace; --font-sans: 'Inter', sans-serif;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: var(--bg-base); color: var(--text-main); font-family: var(--font-sans); height: 100vh; display: flex; overflow: hidden; }
+        .color-GET { color: var(--method-get) !important; }
+        .color-POST { color: var(--method-post) !important; }
+        .color-PUT { color: var(--method-put) !important; }
+        .color-DELETE { color: var(--method-delete) !important; }
+        .sidebar { width: 310px; background-color: var(--bg-sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+        .main-pane { flex: 1; display: flex; flex-direction: column; }
+        .editor-pane { flex: 1; display: flex; flex-direction: column; background-color: var(--bg-panel); }
+        .bottom-panes { flex: 1; display: flex; border-top: 1px solid var(--border); overflow: hidden; }
+        .response-pane { flex: 1; display: flex; flex-direction: column; background-color: var(--bg-panel); border-right: 1px solid var(--border); }
+        .debug-pane { width: 350px; display: flex; flex-direction: column; background-color: #050505; }
+        .sidebar-header { padding: 16px; border-bottom: 1px solid var(--border); font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        .config-zone { padding: 12px 16px; background: #050505; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+        .config-zone label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-family: var(--font-mono); }
+        .config-zone input { background: var(--bg-input); border: 1px solid var(--border); color: #fff; padding: 6px 8px; border-radius: 4px; width: 100%; font-family: var(--font-mono); font-size: 12px; }
+        .route-list { overflow-y: auto; flex: 1; padding: 12px 8px; }
+        .route-group-title { font-size: 11px; text-transform: uppercase; color: var(--text-muted); margin: 16px 8px 8px 8px; letter-spacing: 0.5px; }
+        .route-item { display: flex; align-items: center; padding: 6px 8px; cursor: pointer; border-radius: 4px; font-size: 12px; font-family: var(--font-mono); transition: background 0.2s; margin-bottom: 2px; }
+        .route-item:hover { background-color: var(--bg-input); }
+        .route-method { font-size: 10px; font-weight: bold; width: 52px; }
+        .request-bar { display: flex; padding: 16px; gap: 8px; border-bottom: 1px solid var(--border); }
+        .method-select { background-color: var(--bg-input); color: var(--text-main); border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; font-weight: bold; outline: none; }
+        .url-input { flex: 1; background-color: var(--bg-input); color: var(--text-main); border: 1px solid var(--border); border-radius: 4px; padding: 8px 16px; font-family: var(--font-mono); font-size: 14px; outline: none; }
+        .btn-send { background-color: #EDEDED; color: #000; border: none; border-radius: 4px; padding: 0 24px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .tabs { display: flex; border-bottom: 1px solid var(--border); padding: 0 16px; }
+        .tab { padding: 12px 16px; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; font-size: 13px; }
+        .tab.active { color: var(--text-main); border-bottom-color: var(--text-main); }
+        .editor-container { flex: 1; display: flex; flex-direction: column; }
+        textarea { width: 100%; flex: 1; background-color: var(--bg-panel); color: var(--text-main); border: none; padding: 16px; font-family: var(--font-mono); font-size: 13px; resize: none; outline: none; }
+        .panel-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); background-color: #111; font-size: 13px; }
+        .response-meta { display: flex; gap: 12px; font-size: 11px; font-family: var(--font-mono); }
+        .meta-badge { padding: 4px 8px; border-radius: 4px; background: #222; }
+        .status-ok { color: var(--method-get); }
+        .status-error { color: var(--method-delete); }
+        pre { padding: 16px; margin: 0; overflow: auto; flex: 1; font-family: var(--font-mono); font-size: 13px; color: #A1A1AA; }
+        .debug-logs { padding: 12px; flex: 1; overflow-y: auto; font-family: var(--font-mono); font-size: 11px; display: flex; flex-direction: column; gap: 6px; }
+        .log-item { padding: 6px; border-radius: 4px; border-left: 3px solid #555; background: #111; }
+        .log-info { border-left-color: var(--method-post); color: #93C5FD; }
+        .log-success { border-left-color: var(--method-get); color: #6EE7B7; }
+        .log-warn { border-left-color: var(--method-put); color: #FCD34D; }
+        .log-error { border-left-color: var(--method-delete); color: #FCA5A5; background: #221313; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header"><i class="ph ph-terminal-window"></i> API Tester (Instantané)</div>
+        <div class="config-zone">
+            <label for="base-url">Serveur Cible :</label>
+            <input type="text" id="base-url" value="http://localhost:3000" placeholder="http://localhost:3000">
+        </div>
+        <div class="route-list" id="route-list"></div>
+    </div>
+
+    <div class="main-pane">
+        <div class="editor-pane">
+            <div class="request-bar">
+                <select class="method-select" id="http-method">
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                    <option value="PUT">PUT</option>
+                    <option value="DELETE">DELETE</option>
+                </select>
+                <input type="text" class="url-input" id="api-url" value="/api/admin/users">
+                <button class="btn-send" onclick="sendRequest()">Envoyer <i class="ph ph-paper-plane-right"></i></button>
+            </div>
+
+            <div class="tabs">
+                <div class="tab active" onclick="switchReqTab('body')">Body (JSON)</div>
+                <div class="tab" onclick="switchReqTab('headers')">Headers (JSON)</div>
+            </div>
+
+            <div class="editor-container">
+                <textarea id="req-body" placeholder="{&#10;  &quot;key&quot;: &quot;value&quot;&#10;}"></textarea>
+                <div id="req-headers" class="hidden" style="flex: 1; display: flex;">
+                    <textarea id="req-headers-text">{\n  "Content-Type": "application/json"\n}</textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-panes">
+            <div class="response-pane">
+                <div class="panel-header">
+                    <span>Flux de réponse</span>
+                    <div class="response-meta">
+                        <div class="meta-badge">Status: <span id="res-status" class="status-ok">--</span></div>
+                        <div class="meta-badge">Time: <span id="res-time">-- ms</span></div>
+                    </div>
+                </div>
+                <pre><code id="res-body">// En attente de sélection d'une route...</code></pre>
+            </div>
+
+            <div class="debug-pane">
+                <div class="panel-header" style="background:#000;"><span>Logs Réseau</span></div>
+                <div class="debug-logs" id="debug-logs">
+                    <div class="log-item log-info">[Système] Prêt. Clique sur n'importe quelle route globale à gauche pour l'interroger sans attendre.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const routes = [
+            { group: "ADMIN LISTS", method: "GET", path: "/api/admin/users" },
+            { group: "ADMIN LISTS", method: "GET", path: "/api/admin/requests" },
+            { group: "USER", method: "POST", path: "/api/user" },
+            { group: "USER", method: "GET", path: "/api/user/{id}" },
+            { group: "USER", method: "PUT", path: "/api/users/{id}" },
+            { group: "USER", method: "DELETE", path: "/api/user/{id}" },
+            { group: "API KEYS", method: "GET", path: "/api/api-keys/{id}" },
+            { group: "REQUESTS", method: "GET", path: "/api/users/{id}/creditsrequests" },
+            { group: "CACHE", method: "GET", path: "/api/users/{id}/cache" }
+        ];
+
+        function log(message, type = 'info') {
+            const container = document.getElementById('debug-logs');
+            const item = document.createElement('div');
+            item.className = `log-item log-${type}`;
+            item.innerText = `[${new Date().toLocaleTimeString()}] ${message}`;
+            container.appendChild(item);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function initSidebar() {
+            const container = document.getElementById('route-list');
+            let currentGroup = '';
+            routes.forEach(route => {
+                if(route.group !== currentGroup) {
+                    currentGroup = route.group;
+                    const groupTitle = document.createElement('div');
+                    groupTitle.className = 'route-group-title';
+                    groupTitle.innerText = currentGroup;
+                    container.appendChild(groupTitle);
+                }
+                const el = document.createElement('div');
+                el.className = 'route-item';
+                el.innerHTML = `<span class="route-method color-${route.method}">${route.method}</span><span>${route.path}</span>`;
+                
+                el.onclick = () => {
+                    document.getElementById('http-method').value = route.method;
+                    document.getElementById('http-method').className = `method-select color-${route.method}`;
+                    
+                    // Remplacement intelligent pour éviter les erreurs d'inattention
+                    let finalPath = route.path;
+                    if(finalPath.includes('{id}')) finalPath = finalPath.replace('{id}', '1');
+                    if(finalPath.includes('{userId}')) finalPath = finalPath.replace('{userId}', '1');
+                    if(finalPath.includes('{requestId}')) finalPath = finalPath.replace('{requestId}', '1');
+                    
+                    document.getElementById('api-url').value = finalPath;
+
+                    // Setup automatique du body selon la méthode
+                    if(route.method === 'GET' || route.method === 'DELETE') {
+                        document.getElementById('req-body').value = '';
+                    } else if(document.getElementById('req-body').value.trim() === '') {
+                        document.getElementById('req-body').value = '{\n  \n}';
+                    }
+
+                    log(`Route chargée : ${route.method} ${finalPath}`);
+                    
+                    // Si c'est une route de lecture (GET), on bombarde tout de suite la requête
+                    if(route.method === 'GET') {
+                        log(`⚡ Déclenchement automatique de la lecture...`);
+                        sendRequest();
+                    }
+                };
+                container.appendChild(el);
+            });
+        }
+
+        function switchReqTab(tabName) {
+            document.querySelectorAll('.editor-pane .tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('req-body').classList.add('hidden');
+            document.getElementById('req-headers').classList.add('hidden');
+            if(tabName === 'body') document.getElementById('req-body').classList.remove('hidden');
+            if(tabName === 'headers') document.getElementById('req-headers').classList.remove('hidden');
+        }
+
+        async function sendRequest() {
+            const baseUrl = document.getElementById('base-url').value.replace(/\/$/, "");
+            const endpoint = document.getElementById('api-url').value;
+            const method = document.getElementById('http-method').value;
+            const bodyContent = document.getElementById('req-body').value;
+
+            const resBodyEl = document.getElementById('res-body');
+            const resStatusEl = document.getElementById('res-status');
+            const resTimeEl = document.getElementById('res-time');
+
+            resBodyEl.innerText = "Appel serveur en cours...";
+            resBodyEl.style.color = "#888";
+
+            const fullUrl = `${baseUrl}${endpoint}`;
+            const options = { method: method, headers: { 'Content-Type': 'application/json' } };
+            
+            if (method !== 'GET' && bodyContent.trim() !== "") {
+                try {
+                    JSON.parse(bodyContent);
+                    options.body = bodyContent;
+                } catch(e) {
+                    log(`[STOP] Échec de transmission : format JSON invalide.`, 'warn');
+                    resBodyEl.innerText = "Syntax Error dans le JSON de ton Body.";
+                    return;
+                }
+            }
+
+            const startTime = performance.now();
+            try {
+                const response = await fetch(fullUrl, options);
+                const duration = Math.round(performance.now() - startTime);
+
+                log(`[REP] ${response.status} ${response.statusText} en ${duration}ms`, response.ok ? 'success' : 'warn');
+
+                resStatusEl.innerText = `${response.status} ${response.statusText}`;
+                resStatusEl.className = response.ok ? "status-ok" : "status-error";
+                resTimeEl.innerText = `${duration} ms`;
+
+                const text = await response.text();
+                try {
+                    const parsed = JSON.parse(text);
+                    resBodyEl.innerText = JSON.stringify(parsed, null, 2);
+                    resBodyEl.style.color = response.ok ? "var(--method-get)" : "var(--method-delete)";
+                } catch {
+                    resBodyEl.innerText = text || "// Réponse vide";
+                    resBodyEl.style.color = "#FFF";
+                }
+            } catch(err) {
+                const duration = Math.round(performance.now() - startTime);
+                log(`[CRASH] Impossible de joindre l'adresse : ${fullUrl}`, 'error');
+                resStatusEl.innerText = "HÔTE INACCESSIBLE";
+                resStatusEl.className = "status-error";
+                resTimeEl.innerText = `${duration} ms`;
+                resBodyEl.innerText = `Connexion refusée.\n\nAssure-toi que :\n1. Ton backend écoute bien sur l'adresse spécifiée à gauche.\n2. Le CORS accepte ton origine.`;
+                resBodyEl.style.color = "var(--method-delete)";
+            }
+        }
+
+        initSidebar();
+    </script>
+</body>
+</html>

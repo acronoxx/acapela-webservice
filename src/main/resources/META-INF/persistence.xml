@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence" version="3.0">
+    <persistence-unit name="acapela-webservice" transaction-type="RESOURCE_LOCAL">
+        <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
+
+        <!-- Entities -->
+        <class>fr.imta.acapela_webservice.model.ApiKey</class>
+        <class>fr.imta.acapela_webservice.model.ApiException</class>
+        <class>fr.imta.acapela_webservice.model.Cache</class>
+        <class>fr.imta.acapela_webservice.model.CacheStorageRequest</class>
+        <class>fr.imta.acapela_webservice.model.CreditsRequest</class>
+        <class>fr.imta.acapela_webservice.model.File</class>
+        <class>fr.imta.acapela_webservice.model.Request</class>
+        <class>fr.imta.acapela_webservice.model.RequestType</class>
+        <class>fr.imta.acapela_webservice.model.Role</class>
+        <class>fr.imta.acapela_webservice.model.Status</class>
+        <class>fr.imta.acapela_webservice.model.SynthesisRequest</class>
+        <class>fr.imta.acapela_webservice.model.User</class>
+
+        <properties>
+            <property name="jakarta.persistence.jdbc.driver" value="org.postgresql.Driver"/>
+            <property name="jakarta.persistence.jdbc.url" value="jdbc:postgresql://ep-cool-meadow-abdjwy2i-pooler.eu-west-2.aws.neon.tech:5432/neondb?sslmode=require&amp;channel_binding=require"/>
+            <property name="jakarta.persistence.jdbc.user" value="neondb_owner"/>
+            <property name="jakarta.persistence.jdbc.password" value="npg_8Wh7KaNnGCgl"/>
+            <property name="eclipselink.ddl-generation" value="create-or-extend-tables"/>
+        </properties>
+    </persistence-unit>
+</persistence>

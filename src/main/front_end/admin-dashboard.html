@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Live Data</title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        :root {
+            --bg-base: #000000; --bg-surface: #0A0A0A; --bg-elevated: #111111; --bg-hover: #1A1A1A;
+            --border-dim: #222222; --border-hover: #333333; --text-primary: #EDEDED; --text-secondary: #A1A1AA;
+            --accent-blue: #3291FF; --accent-green: #10B981; --accent-red: #EF4444; --accent-orange: #F59E0B;
+            --font-sans: 'Inter', system-ui, sans-serif; --radius-md: 6px; --radius-lg: 8px; --transition: all 0.2s ease;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: var(--bg-base); color: var(--text-primary); font-family: var(--font-sans); font-size: 14px; display: flex; height: 100vh; overflow: hidden; }
+        .sidebar { width: 260px; background-color: var(--bg-surface); border-right: 1px solid var(--border-dim); display: flex; flex-direction: column; padding: 24px 16px; gap: 24px; }
+        .brand { display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 16px; padding: 0 8px; }
+        .nav-group { display: flex; flex-direction: column; gap: 4px; }
+        .nav-group-title { font-size: 11px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.05em; margin: 8px 0 4px 8px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: var(--radius-md); color: var(--text-secondary); text-decoration: none; cursor: pointer; transition: var(--transition); }
+        .nav-item:hover, .nav-item.active { background-color: var(--bg-hover); color: var(--text-primary); }
+        .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
+        .header { height: 64px; border-bottom: 1px solid var(--border-dim); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; background-color: rgba(10, 10, 10, 0.8); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 10; }
+        .config-input { background: var(--bg-elevated); border: 1px solid var(--border-dim); color: #fff; padding: 6px 12px; border-radius: var(--radius-md); font-family: monospace; font-size: 12px; width: 220px; }
+        .server-status { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 4px 12px; border-radius: 999px; }
+        .server-status.online { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); color: var(--accent-green); }
+        .server-status.offline { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: var(--accent-red); }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .online .status-dot { background-color: var(--accent-green); box-shadow: 0 0 8px var(--accent-green); }
+        .offline .status-dot { background-color: var(--accent-red); }
+        .content { padding: 32px; display: flex; flex-direction: column; gap: 32px; }
+        .table-container { background-color: var(--bg-surface); border: 1px solid var(--border-dim); border-radius: var(--radius-lg); overflow: hidden; }
+        .table-header { padding: 16px 24px; border-bottom: 1px solid var(--border-dim); display: flex; justify-content: space-between; align-items: center; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 12px 24px; color: var(--text-secondary); font-size: 12px; text-transform: uppercase; border-bottom: 1px solid var(--border-dim); background: var(--bg-elevated); }
+        td { padding: 16px 24px; border-bottom: 1px solid var(--border-dim); }
+        tr:hover td { background-color: var(--bg-hover); }
+        .badge { padding: 4px 8px; border-radius: 999px; font-size: 11px; font-weight: 500; text-transform: uppercase; }
+        .badge.active { background: rgba(16, 185, 129, 0.1); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.2); }
+        .badge.pending { background: rgba(245, 158, 11, 0.1); color: var(--accent-orange); border: 1px solid rgba(245, 158, 11, 0.2); }
+        .btn { background: var(--bg-elevated); color: var(--text-primary); border: 1px solid var(--border-dim); padding: 8px 16px; border-radius: var(--radius-md); cursor: pointer; font-size: 13px; }
+        .btn:hover { background: var(--bg-hover); }
+        .action-btns { display: flex; gap: 8px; }
+        .btn-icon { padding: 6px; background: transparent; border: 1px solid var(--border-dim); border-radius: 4px; color: var(--text-secondary); cursor: pointer; }
+        .btn-icon:hover { color: var(--text-primary); }
+        #toast-container { position: fixed; bottom: 24px; right: 24px; display: flex; flex-direction: column; gap: 12px; z-index: 9999; }
+        .toast { background: var(--bg-elevated); border: 1px solid var(--border-dim); padding: 16px; border-radius: var(--radius-md); box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 12px; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="brand"><i class="ph-fill ph-hexagon"></i> Admin Central</div>
+        <div class="nav-group">
+            <div class="nav-group-title">Système</div>
+            <a class="nav-item active" onclick="switchTab('users')"><i class="ph ph-users"></i> Utilisateurs</a>
+            <a class="nav-item" onclick="switchTab('requests')"><i class="ph ph-list-dashes"></i> Demandes (Requests)</a>
+        </div>
+    </aside>
+
+    <main class="main-wrapper">
+        <header class="header">
+            <div>
+                <span style="font-size: 12px; color:var(--text-secondary)">URL Serveur : </span>
+                <input type="text" id="dashboard-base-url" class="config-input" value="http://localhost:3000" onchange="checkServerStatus()">
+            </div>
+            <div id="status-indicator" class="server-status offline">
+                <div class="status-dot"></div>
+                <span id="status-text">CONNEXION...</span>
+            </div>
+        </header>
+
+        <div class="content">
+            <div id="tab-users">
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3>Utilisateurs en Base (GET /api/admin/users)</h3>
+                        <button class="btn" onclick="loadUsers()">Actualiser les données</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Email</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body">
+                            <tr><td colspan="3" style="text-align: center; color: var(--text-secondary)">Aucune donnée chargée. Cliquez sur actualiser.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="tab-requests" class="hidden">
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3>Demandes en attente (GET /api/admin/requests)</h3>
+                        <button class="btn" onclick="loadRequests()">Recharger</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID Demande</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="requests-table-body">
+                            <tr><td colspan="3" style="text-align: center; color: var(--text-secondary)">Aucune demande chargée.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast-container"></div>
+
+    <script>
+        function getBaseUrl() { return document.getElementById('dashboard-base-url').value.replace(/\/$/, ""); }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            document.querySelectorAll('.content > div').forEach(el => el.classList.add('hidden'));
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+            if(tabId === 'users') loadUsers();
+            if(tabId === 'requests') loadRequests();
+        }
+
+        // Vérification de la disponibilité du serveur en arrière-plan
+        async function checkServerStatus() {
+            const indicator = document.getElementById('status-indicator');
+            const text = document.getElementById('status-text');
+            try {
+                const response = await fetch(`${getBaseUrl()}/api/admin/users`, { method: 'GET' });
+                indicator.className = "server-status online";
+                text.innerText = "SERVEUR CONNECTÉ";
+            } catch(e) {
+                indicator.className = "server-status offline";
+                text.innerText = "SERVEUR OFFLINE";
+            }
+        }
+
+        // CHARGEMENT DES UTILISATEURS (Appel Réel)
+        async function loadUsers() {
+            try {
+                const res = await fetch(`${getBaseUrl()}/api/admin/users`);
+                if(!res.ok) throw new Error(`Statut d'erreur: ${res.status}`);
+                const users = await res.json();
+                
+                const tbody = document.getElementById('users-table-body');
+                tbody.innerHTML = "";
+
+                if(users.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center">Aucun utilisateur trouvé sur le serveur</td></tr>`;
+                    return;
+                }
+
+                users.forEach(user => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td style="font-family: monospace; color: var(--text-secondary)">${user.id || user._id}</td>
+                        <td>${user.email || 'N/A'}</td>
+                        <td>
+                            <button class="btn-icon" style="color:var(--accent-red)" onclick="deleteUser('${user.id || user._id}')"><i class="ph ph-trash"></i></button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                showToast("Utilisateurs mis à jour depuis le serveur.", "success");
+            } catch(err) {
+                showToast("Impossible de charger les utilisateurs backend.", "error");
+            }
+        }
+
+        // SUPPRESSION UTILISATEUR (Appel Réel : DELETE /api/admin/{id})
+        async function deleteUser(id) {
+            if(!confirm("Supprimer définitivement cet utilisateur ?")) return;
+            try {
+                const res = await fetch(`${getBaseUrl()}/api/admin/${id}`, { method: 'DELETE' });
+                if(res.ok) {
+                    showToast("Utilisateur supprimé", "success");
+                    loadUsers();
+                } else { showToast("Erreur serveur pendant la suppression.", "error"); }
+            } catch(e) { showToast("Erreur de connexion réseau.", "error"); }
+        }
+
+        // TRAITEMENT DES REQUÊTES ADMIN (Appel Réel : PUT /api/admin/requests/{id}/approve)
+        async function loadRequests() {
+            try {
+                const res = await fetch(`${getBaseUrl()}/api/admin/requests`);
+                const data = await res.json();
+                const tbody = document.getElementById('requests-table-body');
+                tbody.innerHTML = "";
+                
+                data.forEach(req => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td style="font-family:monospace">${req.id}</td>
+                        <td><span class="badge pending">${req.status || 'en attente'}</span></td>
+                        <td class="action-btns">
+                            <button class="btn-icon" onclick="processRequest('${req.id}', 'approve')"><i class="ph ph-check" style="color:var(--accent-green)"></i></button>
+                            <button class="btn-icon" onclick="processRequest('${req.id}', 'refuse')"><i class="ph ph-x" style="color:var(--accent-red)"></i></button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch(e) { showToast("Erreur chargement demandes.", "error"); }
+        }
+
+        async function processRequest(requestId, action) {
+            try {
+                const res = await fetch(`${getBaseUrl()}/api/admin/requests/${requestId}/${action}`, { method: 'PUT' });
+                if(res.ok) {
+                    showToast(`Demande mise à jour (${action})`, "success");
+                    loadRequests();
+                }
+            } catch(e) { showToast("Échec de la mise à jour réseau.", "error"); }
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerText = message;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // Démarrage automatique du monitoring statut
+        setInterval(checkServerStatus, 5000);
+        checkServerStatus();
+    </script>
+</body>
+</html>
