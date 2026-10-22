@@ -12,6 +12,11 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.OneToOne;
 
+/**
+ * Audio cache of an {@link ApiKey}: the {@link File}s already synthesized for that key,
+ * so that a text sent again is not synthesized twice.
+ * {@code size} and {@code maxSize} track how much storage the cache uses and is allowed.
+ */
 @Entity
 public class Cache {
 

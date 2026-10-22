@@ -16,8 +16,15 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 
+/**
+ * Common part of every request made by a user: credits ({@link CreditsRequest}),
+ * cache storage ({@link CacheStorageRequest}) or synthesis ({@link SynthesisRequest}).
+ *
+ * <p>All request types are stored in a single table; the {@code type} column tells them apart.
+ * An admin processes a request by changing its {@link Status}.
+ */
 @Entity
-@Inheritance(strategy = InheritanceType.SINGLE_TABLE) 
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "type")
 public class Request {
     

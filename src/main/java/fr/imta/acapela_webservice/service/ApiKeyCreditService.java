@@ -12,6 +12,12 @@ import fr.imta.acapela_webservice.model.Status;
 import fr.imta.acapela_webservice.model.User;
 import jakarta.persistence.EntityManager;
 
+/**
+ * Business logic for API keys and credits requests.
+ *
+ * <p>Methods validate their arguments, throw an {@link AppException} when a rule is broken,
+ * and wrap every write in a JPA transaction that is rolled back on error.
+ */
 public class ApiKeyCreditService {
     private EntityManager db;
 
@@ -21,6 +27,14 @@ public class ApiKeyCreditService {
 
     // ===== API KEYS =====
 
+    /**
+     * Creates an API key for a user, together with its cache (max size 50).
+     * The key starts inactive, with 0 credits and the {@code PROCESSING} status,
+     * so that an admin can review it.
+     *
+     * @throws AppException.AllArgRequiredException if {@code name} is empty
+     * @throws AppException.UserNotFoundException if the user does not exist
+     */
     public ApiKey createApiKey(String name, Long userId) {
         if (name == null || name.isEmpty()) {
             throw new AppException.AllArgRequiredException("name");
@@ -56,6 +70,7 @@ public class ApiKeyCreditService {
         return apiKey;
     }
 
+    /** @throws AppException.ApiKeyNotFoundException if no key has this id */
     public ApiKey findApiKeyById(Long id) {
         ApiKey apiKey = db.find(ApiKey.class, id);
         if (apiKey == null) {
@@ -74,6 +89,7 @@ public class ApiKeyCreditService {
             .getResultList();
     }
 
+    /** Generates a new token for the key (not exposed by any route yet). */
     public void renewToken(Long id) {
         ApiKey apiKey = findApiKeyById(id);
         apiKey.generateToken();
@@ -132,6 +148,12 @@ public class ApiKeyCreditService {
 
     // ===== CREDITS REQUESTS =====
 
+    /**
+     * Records a request for more credits on an API key, with the {@code PENDING} status.
+     * The credits are only added once an admin processes the request.
+     *
+     * @throws AppException.AllArgRequiredException if {@code description} is empty or {@code amount} is not positive
+     */
     public CreditsRequest requestCredit(int amount, Long apiKeyId, Long userId, String description) {
         if (description == null || description.isEmpty()) {
             throw new AppException.AllArgRequiredException("description");
@@ -175,6 +197,7 @@ public class ApiKeyCreditService {
 
     // ===== UTILS =====
 
+    // Saves the changes made to an entity inside a transaction, rolled back on error
     private void persistTransaction(Object entity) {
         db.getTransaction().begin();
         try {

@@ -13,6 +13,13 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 
+/**
+ * HTTP handlers for API keys and credit requests.
+ *
+ * <p>Each method reads the path parameters and JSON body, checks the caller's rights with
+ * {@link AuthUtils}, delegates to {@link ApiKeyCreditService} and writes the response.
+ * Any {@link AppException} is turned into a response with its status code and message.
+ */
 public class ApiKeyCreditHandler {
     private ApiKeyCreditService apiKeysCreditService;
 
@@ -22,6 +29,10 @@ public class ApiKeyCreditHandler {
 
     // ===== API KEYS =====
 
+    /**
+     * {@code POST /api/apikeys} (SELF): creates an API key, and its cache, for the caller.
+     * Body: {@code {"name": string}}. Returns the created key.
+     */
     public void createApiKey(RoutingContext ctx){
         try {
             Long userId = AuthUtils.getUserIdFromJWT(ctx);
@@ -37,6 +48,7 @@ public class ApiKeyCreditHandler {
         }
     }
 
+    /** {@code GET /api/apikeys} (ADMIN): lists every API key. */
     public void getApiKeys(RoutingContext ctx){
         try {
             AuthUtils.assertAdmin(ctx);
@@ -53,6 +65,7 @@ public class ApiKeyCreditHandler {
         }
     }
 
+    /** {@code GET /api/apikeys/users/:userId} (SELF or ADMIN): lists the API keys of a user. */
     public void getApiKeysByUserId(RoutingContext ctx){
         try {
             Long userId = getUserIdFromPath(ctx);
@@ -70,6 +83,7 @@ public class ApiKeyCreditHandler {
         }
     }
 
+    /** {@code GET /api/apikeys/:apiKeyId} (SELF or ADMIN): returns one API key. */
     public void getApiKeyById(RoutingContext ctx){
         try {
             Long apiKeyId = getApiKeyIdFromPath(ctx);
@@ -85,6 +99,10 @@ public class ApiKeyCreditHandler {
         }
     }
 
+    /**
+     * {@code PATCH /api/apikeys/:apiKeyId/active} (SELF or ADMIN): enables or disables a key.
+     * Body: {@code {"active": boolean}}. Responds 204.
+     */
     public void setApiKeyActive(RoutingContext ctx){
         try {
             Long apiKeyId = getApiKeyIdFromPath(ctx);
@@ -102,6 +120,10 @@ public class ApiKeyCreditHandler {
         }
     }
 
+    /**
+     * {@code PATCH /api/apikeys/:apiKeyId/credits} (ADMIN): sets the credit balance of a key.
+     * Body: {@code {"credits": int}} (must be &gt;= 0). Responds 204.
+     */
     public void setApiKeyCredits(RoutingContext ctx){
         try {
             AuthUtils.assertAdmin(ctx);
@@ -118,6 +140,10 @@ public class ApiKeyCreditHandler {
         }
     }
 
+    /**
+     * {@code PATCH /api/apikeys/:apiKeyId/status} (ADMIN): changes the status of a key.
+     * Body: {@code {"status": "PENDING" | "PROCESSING" | "DONE" | ...}} (see {@link Status}). Responds 204.
+     */
     public void setApiKeyStatus(RoutingContext ctx){
         try {
             AuthUtils.assertAdmin(ctx);
@@ -134,6 +160,10 @@ public class ApiKeyCreditHandler {
         }
     }
 
+    /**
+     * {@code PATCH /api/apikeys/:apiKeyId/unlimited} (ADMIN): lets a key synthesize without spending credits.
+     * Body: {@code {"unlimited": boolean}}. Responds 204.
+     */
     public void setApiKeyUnlimited(RoutingContext ctx){
         try {
             AuthUtils.assertAdmin(ctx);
@@ -150,6 +180,7 @@ public class ApiKeyCreditHandler {
         }
     }
 
+    /** {@code DELETE /api/apikeys/:apiKeyId} (SELF or ADMIN): deletes a key. Responds 204. */
     public void deleteApiKey(RoutingContext ctx){
         try {
             Long apiKeyId = getApiKeyIdFromPath(ctx);
@@ -166,6 +197,11 @@ public class ApiKeyCreditHandler {
 
     // ===== CREDITS REQUESTS =====
 
+    /**
+     * {@code POST /api/requests/credits} (SELF): asks an admin for more credits on one of the caller's keys.
+     * Body: {@code {"api_key_id": long, "amount": int, "description": string}}.
+     * Returns the created request, with status {@code PENDING}.
+     */
     public void createCreditsRequest(RoutingContext ctx){
         try {
             Long userId = AuthUtils.getUserIdFromJWT(ctx);

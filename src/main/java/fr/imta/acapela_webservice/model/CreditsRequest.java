@@ -6,6 +6,7 @@ import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;
 
+/** Request from a user to get more credits ({@code requestedAmount}) on one of their API keys. */
 @Entity
 @DiscriminatorValue("CREDITS")
 public class CreditsRequest extends Request {

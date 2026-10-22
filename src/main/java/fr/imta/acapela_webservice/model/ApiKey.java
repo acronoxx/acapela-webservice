@@ -13,6 +13,13 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 
+/**
+ * API key owned by a {@link User}, used to call the synthesis service.
+ *
+ * <p>The {@code token} (a random UUID) is what the client sends to synthesize audio.
+ * Each synthesis spends one credit, unless the key is {@code unlimited}.
+ * A key also owns one {@link Cache} for its audio files.
+ */
 @Entity
 public class ApiKey {
 

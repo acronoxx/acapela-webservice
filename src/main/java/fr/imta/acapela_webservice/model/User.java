@@ -11,6 +11,11 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 
+/**
+ * Account of the web service. A user logs in with email and password (stored as a BCrypt hash),
+ * has a {@link Role}, owns {@link ApiKey}s and makes {@link Request}s.
+ * The table is named {@code users} because {@code user} is a reserved word in PostgreSQL.
+ */
 @Entity
 @Table(name = "users")
 public class User {

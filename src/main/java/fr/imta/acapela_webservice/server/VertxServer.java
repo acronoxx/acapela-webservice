@@ -23,6 +23,21 @@ import jakarta.persistence.Persistence;
 import io.vertx.ext.auth.jwt.JWTAuth;
 import io.vertx.ext.auth.jwt.JWTAuthOptions;
 
+/**
+ * Entry point of the web service.
+ *
+ * <p>Opens the JPA connection to PostgreSQL, builds the services and handlers,
+ * declares every HTTP route under {@code /api} and starts the HTTP server on port 8080.
+ *
+ * <p>Routes are split in three groups:
+ * <ul>
+ *   <li>public routes: account creation and login, no token required;</li>
+ *   <li>authenticated routes: a valid JWT is required ({@code Authorization: Bearer <token>}),
+ *       and the handler then checks that the caller owns the resource (SELF) or is an admin;</li>
+ *   <li>admin routes: a valid JWT with the {@code ADMIN} role is required.</li>
+ * </ul>
+ * The access rule of each route is written as a comment next to it.
+ */
 public class VertxServer extends AbstractVerticle {
     private Vertx vertx;
     private EntityManager db; // database object
@@ -64,7 +79,7 @@ public class VertxServer extends AbstractVerticle {
         UserService us = new UserService(db);
 
         // create handlers
-        SynthesisHandler sh = new SynthesisHandler(ss);
+        SynthesisHandler sh = new SynthesisHandler(ss); // not mounted on any route yet (POST /synthesis is still to do)
         ApiKeyCreditHandler akch = new ApiKeyCreditHandler(akcs);
         CacheHandler ch = new CacheHandler(cs);
         UserHandler uh = new UserHandler(us,jwtAuth);

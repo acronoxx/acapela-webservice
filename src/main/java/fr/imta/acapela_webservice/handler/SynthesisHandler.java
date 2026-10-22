@@ -5,8 +5,14 @@ import fr.imta.acapela_webservice.service.SynthesisService;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 
+/**
+ * HTTP handler for text-to-speech requests.
+ *
+ * <p>Unlike the other handlers, it does not use the JWT: the client authenticates with
+ * the token of one of its API keys, sent in the request body.
+ */
 public class SynthesisHandler {
-    
+
     private SynthesisService synthesisService;
 
     public SynthesisHandler(SynthesisService synthesisService) {
@@ -15,6 +21,11 @@ public class SynthesisHandler {
 
     /**
      * Méthode appelée lors d'un POST /api/synthesis
+     * (route prévue mais pas encore déclarée dans {@code VertxServer}).
+     *
+     * <p>Body : {@code {"text": string, "token": string, "voice"?: string, "language"?: string,
+     * "format"?: string, "use_cache"?: boolean}}. Valeurs par défaut : voix "Margaux", langue "fr",
+     * format "wav", cache activé. Renvoie {@code {"status", "audio_path", "message"}}.
      */
     public void createSynthesis(RoutingContext ctx) {
         try {

@@ -10,6 +10,10 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.ManyToOne;
 
+/**
+ * Synthesized audio file stored in a {@link Cache}.
+ * {@code sourceText} is the text it was generated from, and is used to find it again.
+ */
 @Entity
 public class File {
     

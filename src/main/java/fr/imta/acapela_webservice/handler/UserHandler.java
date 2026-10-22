@@ -19,8 +19,14 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.auth.jwt.JWTAuth;
 import io.vertx.ext.auth.JWTOptions;
 
+/**
+ * HTTP handlers for user accounts, login, and the requests (credits / cache storage) made by users.
+ *
+ * <p>{@link #createUser} and {@link #login} are the only public routes of the API;
+ * {@link #login} issues the JWT that every other route requires.
+ */
 public class UserHandler {
-    
+
     private UserService userService;
     private JWTAuth jwtAuth;
 
@@ -31,6 +37,11 @@ public class UserHandler {
 
     // ===== ACCOUNT =====
     
+    /**
+     * {@code POST /api/users} (public): registers a new account with the {@code CLIENT} role.
+     * Body: {@code {"first_name", "last_name", "email", "password", "password_confirmation", "cached_by_default": boolean}}.
+     * Returns the created user.
+     */
     public void createUser(RoutingContext ctx){
         try{
             JsonObject input = ctx.body().asJsonObject();
@@ -49,6 +60,10 @@ public class UserHandler {
         }
     }
 
+    /**
+     * {@code POST /api/login} (public): checks the credentials and returns {@code {"token": jwt}}.
+     * Body: {@code {"email", "password"}}. The token holds the user id and role and expires after one hour.
+     */
     public void login(RoutingContext ctx){
         try {
             JsonObject input = ctx.body().asJsonObject();
@@ -70,6 +85,7 @@ public class UserHandler {
         }
     }
 
+    /** {@code GET /api/users} (ADMIN): lists every user. */
     public void getUsers(RoutingContext ctx){
         try{
             AuthUtils.assertAdmin(ctx);
@@ -87,6 +103,7 @@ public class UserHandler {
         }
     }
 
+    /** {@code GET /api/users/:userId} (SELF or ADMIN): returns one user. */
     public void getUserById(RoutingContext ctx){
         try{
             Long userId = getUserIdFromPath(ctx);
@@ -99,6 +116,10 @@ public class UserHandler {
         }
     }
 
+    /**
+     * {@code PUT /api/users/:userId} (SELF): replaces the profile of the caller.
+     * Body: {@code {"first_name", "last_name", "email", "cached_by_default": boolean}}. Returns the updated user.
+     */
     public void updateUser(RoutingContext ctx){
         try{
             Long userId = getUserIdFromPath(ctx);
@@ -119,6 +140,10 @@ public class UserHandler {
         }
     }
 
+    /**
+     * {@code PATCH /api/users/:userId/password} (SELF): changes the caller's password.
+     * Body: {@code {"password", "password_confirmation"}}. Responds 204.
+     */
     public void updateUserPassword(RoutingContext ctx){
         try{
             Long userId = getUserIdFromPath(ctx);
@@ -136,6 +161,10 @@ public class UserHandler {
         }
     }
 
+    /**
+     * {@code PATCH /api/users/:userId/cached-by-default} (SELF): sets whether syntheses are cached by default.
+     * Body: {@code {"cached_by_default": boolean}}. Responds 204.
+     */
     public void updateUserCachedByDefault(RoutingContext ctx){
         try{
             Long userId = getUserIdFromPath(ctx);
@@ -152,6 +181,10 @@ public class UserHandler {
         }
     }
 
+    /**
+     * {@code PATCH /api/users/:userId/role} (ADMIN): changes the role of a user.
+     * Body: {@code {"role": "ADMIN" | "CLIENT"}}. Responds 204.
+     */
     public void updateUserRole(RoutingContext ctx){
         try{
             AuthUtils.assertAdmin(ctx);
@@ -168,6 +201,7 @@ public class UserHandler {
         }
     }
 
+    /** {@code DELETE /api/users/:userId} (SELF or ADMIN): deletes an account. Responds 204. */
     public void deleteUser(RoutingContext ctx){
         try{
             Long userId = getUserIdFromPath(ctx);
@@ -184,6 +218,7 @@ public class UserHandler {
 
     // ===== REQUESTS =====
 
+    /** {@code GET /api/requests} (ADMIN): lists every request, of every type. */
     public void getRequests(RoutingContext ctx){
         try{
             AuthUtils.assertAdmin(ctx);
@@ -197,6 +232,7 @@ public class UserHandler {
         }
     }
 
+    /** {@code GET /api/requests/users/:userId} (SELF or ADMIN): lists the credits and cache requests made on a user's keys. */
     public void getRequestsByUserId(RoutingContext ctx){
         try{
             Long userId = getUserIdFromPath(ctx);
@@ -220,6 +256,7 @@ public class UserHandler {
         }
     }
 
+    /** {@code GET /api/requests/users/:userId/credits} (SELF or ADMIN): lists the credits requests made on a user's keys. */
     public void getCreditsRequestsByUserId(RoutingContext ctx){
         try{
             Long userId = getUserIdFromPath(ctx);
@@ -240,6 +277,7 @@ public class UserHandler {
         }
     }
 
+    /** {@code GET /api/requests/users/:userId/caches} (SELF or ADMIN): lists the cache storage requests made on a user's keys. */
     public void getCacheRequestsByUserId(RoutingContext ctx){
         try{
             Long userId = getUserIdFromPath(ctx);
@@ -260,6 +298,7 @@ public class UserHandler {
         }
     }
 
+    /** {@code GET /api/requests/:requestId} (SELF or ADMIN): returns one request. */
     public void getRequestById(RoutingContext ctx){
         try{
             Long requestId = getRequestIdFromPath(ctx);
@@ -273,6 +312,10 @@ public class UserHandler {
         }
     }
 
+    /**
+     * {@code PATCH /api/requests/:requestId} (ADMIN): processes a request by changing its status.
+     * Body: {@code {"status": "DONE" | "REFUSED" | ...}} (see {@link Status}). Responds 204.
+     */
     public void updateRequest(RoutingContext ctx){
         try{
             AuthUtils.assertAdmin(ctx);
@@ -289,6 +332,7 @@ public class UserHandler {
         }
     }
 
+    /** {@code DELETE /api/requests/:requestId} (SELF or ADMIN): deletes a request. Responds 204. */
     public void deleteRequest(RoutingContext ctx){
         try{
             Long requestId = getRequestIdFromPath(ctx);

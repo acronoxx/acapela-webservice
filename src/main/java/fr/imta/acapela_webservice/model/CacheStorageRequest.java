@@ -6,6 +6,7 @@ import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToOne;
 
+/** Request from a user to get more cache storage ({@code requestedSize}) on one of their API keys. */
 @Entity
 @DiscriminatorValue("CACHESTORAGE")
 public class CacheStorageRequest extends Request {

@@ -5,6 +5,12 @@ import jakarta.persistence.EntityManager;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Business logic for API key caches, their audio files, and cache storage requests.
+ *
+ * <p>A cache stores the audio files already synthesized for an API key, so that the same
+ * text does not need to be sent to Acapela again.
+ */
 public class CacheService {
     private final EntityManager db;
 
@@ -12,6 +18,7 @@ public class CacheService {
         this.db = db;
     }
 
+    /** Returns the cache with this id, or {@code null} if it does not exist. */
     public Cache findCacheById(Long cacheId) {
         return db.find(Cache.class, cacheId);
     }
@@ -24,6 +31,7 @@ public class CacheService {
         return cache.getFiles();
     }
 
+    /** Returns the file of the cache with this id, or {@code null} if the cache has no such file. */
     public File getFileById(Long cacheId, Long fileId) {
         Cache cache = findCacheById(cacheId);
         if (cache == null) {
@@ -35,6 +43,7 @@ public class CacheService {
                 .orElse(null);
     }
 
+    /** Empties the cache: resets its size and detaches its files. */
     public void clearCache(Long cacheId) {
         Cache cache = findCacheById(cacheId);
         if (cache == null) {
@@ -84,6 +93,11 @@ public class CacheService {
         }
     }
 
+    /**
+     * Records a request for more cache storage on an API key, with the {@code PROCESSING} status.
+     *
+     * @throws AppException.AllArgRequiredException if {@code description} is empty or {@code size} is not positive
+     */
     public CacheStorageRequest requestCacheStorage(int size, Long id_apiKey, Long id_user, String description) {
         User user = db.find(User.class, id_user);
         ApiKey apiKey = db.find(ApiKey.class, id_apiKey);

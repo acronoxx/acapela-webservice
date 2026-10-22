@@ -19,6 +19,13 @@ import fr.imta.acapela_webservice.model.Status;
 import fr.imta.acapela_webservice.model.User;
 import jakarta.persistence.EntityManager;
 
+/**
+ * Business logic for user accounts, authentication, and users' requests.
+ *
+ * <p>Passwords are never stored in clear: they are hashed with BCrypt (cost 12).
+ * A valid password has at least 12 characters, with one uppercase letter, one lowercase
+ * letter, one digit, one special character, no whitespace, and does not start with '.' or '-'.
+ */
 public class UserService {
     private EntityManager db;
 
@@ -28,6 +35,10 @@ public class UserService {
 
     // ===== ACCOUNT =====
 
+    /**
+     * Creates a user after validating every field (non-empty names, valid and unused email,
+     * valid password matching its confirmation).
+     */
     public User createUser(String firstName, String lastName, String email, String password, String passwordConfirmation, boolean cachedByDefault) {
         createValidation(firstName, lastName, email, password, passwordConfirmation, cachedByDefault);
 
@@ -48,6 +59,11 @@ public class UserService {
         return user;
     }
 
+    /**
+     * Checks an email / password pair against the stored BCrypt hash.
+     * The same {@link AppException.UnauthorizedException} is thrown whatever the cause,
+     * so that the caller cannot tell whether the email exists.
+     */
     public User authenticate(String email, String password) {
         if (email == null || email.isEmpty()) {
             throw new AppException.UnauthorizedException();
@@ -206,6 +222,7 @@ public class UserService {
         return new ArrayList<>(db.createQuery("SELECT u FROM User u", User.class).getResultList());
     }
 
+    /** Returns the user with this id, or {@code null} if it does not exist. */
     public User findUserById(Long id) {
         return db.find(User.class, id);
     }
@@ -249,6 +266,7 @@ public class UserService {
             .getSingleResult();
     }
 
+    /** Sets the status of a request and records when it was processed. */
     public void updateRequestStatus(Long requestId, Status status) {
         Request request = findRequestById(requestId);
         if (status == null) {

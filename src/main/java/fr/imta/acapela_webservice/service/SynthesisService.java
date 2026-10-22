@@ -14,8 +14,14 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Service de synthèse vocale, basé sur l'API JSAPI d'Acapela ({@code javax.speech}).
+ *
+ * <p>Note : l'enregistrement du moteur Acapela et l'écriture du fichier audio sont encore
+ * commentés, donc aucun fichier n'est réellement produit pour l'instant.
+ */
 public class SynthesisService {
-    
+
     private EntityManager db;
     private Vertx vertx;
 
@@ -30,6 +36,19 @@ public class SynthesisService {
         }
     }
 
+    /**
+     * Génère (ou récupère depuis le cache) le fichier audio correspondant à un texte.
+     *
+     * <p>Étapes, dans une seule transaction exécutée hors de l'event loop :
+     * <ol>
+     *   <li>retrouve la clé API à partir de son token et vérifie qu'elle est active et a des crédits ;</li>
+     *   <li>si le cache est utilisé et contient déjà ce texte, renvoie le fichier existant ;</li>
+     *   <li>sinon lance la synthèse Acapela, enregistre le fichier dans le cache,
+     *       débite un crédit (sauf clé illimitée) et historise la demande.</li>
+     * </ol>
+     *
+     * @return un {@link Future} contenant le chemin du fichier audio
+     */
     public Future<String> generateAudio(String text, String voice, String language, String token, String format, Boolean useCache) {
         
         return vertx.executeBlocking(() -> {

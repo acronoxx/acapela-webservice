@@ -1,6 +1,19 @@
 # Acapela Webservice
 
-> **Status: work in progress.** This is an early-stage project — core routes and models are in place, but several features, error handling paths, and security hardening (e.g. externalizing the JWT secret) are not finished yet.
+> **Status: non-functional prototype (school project).** This project was built by a student team as a learning exercise, not as a working product. The routes, data model and security layer are designed and implemented, but the application is not meant to run end-to-end: the speech synthesis is not wired up, the database configuration is incomplete, and several features remain unfinished. It is kept in its original state, as the team wrote it.
+
+## Learning Goals
+
+The main purpose of this project was to practice and improve skills in:
+
+- **Java backend development** with Java 21 and Maven (including a fat-jar build and locally bundled jars)
+- **Asynchronous web servers** with Vert.x 5 (routers, sub-routers, `Future`, `executeBlocking`, verticles)
+- **REST API design**, organized by resource (users, API keys, caches, requests) with the appropriate HTTP verbs
+- **Data modeling and persistence** with JPA / EclipseLink and PostgreSQL (entity relationships, single-table inheritance, transactions)
+- **Authentication and authorization**: JWT, role-based and owner-based access checks, BCrypt password hashing, input validation
+- **Layered architecture**: handlers / services / models, with a business exception hierarchy mapped to HTTP status codes
+- **Third-party SDK integration**: the proprietary Acapela JSAPI text-to-speech libraries
+- **Basic front-end tooling**: a vanilla HTML/JS API tester and admin dashboard
 
 ## Overview
 
@@ -48,7 +61,7 @@ All business routes are mounted under `/api`. Two routes are public (`POST /user
 | Cache | `GET /caches/:cacheId/files`, `DELETE /caches/:cacheId`, `PATCH /caches/:cacheId/max-size` (admin) |
 | Requests | `POST /requests/cache`, `POST /requests/credits`, `GET /requests/:requestId`, `PATCH /requests/:requestId` (admin) |
 
-A full route list is in `VertxServer.java`. A simple `api-tester.html` page is included under `src/main/front_end/` for manual testing without a full client.
+The full API reference (access rules, request bodies, responses) is in [`docs/API.md`](docs/API.md), and every route is declared in `VertxServer.java`. A simple `api-tester.html` page is included under `src/main/front_end/` for manual testing without a full client.
 
 ## Running Locally
 
@@ -67,6 +80,11 @@ Requirements: JDK 21, Maven (or the bundled `./mvnw`), and a running PostgreSQL 
 3. The server listens on `http://localhost:8080`, with the API mounted under `/api`.
 
 ## Known Limitations / TODO
+
+- The synthesis endpoint (`SynthesisHandler`) is not mounted on the router, and the Acapela engine registration / audio output are commented out, so no audio is actually produced.
+- `persistence.xml` lists non-entity classes and has no JDBC URL or credentials, so the server cannot connect to a database as-is.
+- A single shared `EntityManager` is used across threads, which is not safe under concurrent requests.
+- The front-end pages (`admin-dashboard.html`, `api-tester.html`) target routes and a port that do not match the backend.
 
 - The JWT signing secret is hardcoded in `VertxServer.java` — needs to move to configuration/environment variables before any real deployment.
 - Some handler methods are marked in code comments as needing a rename for clarity (e.g. `deleteApiKey`, `getFileById`, `createCacheRequest`).

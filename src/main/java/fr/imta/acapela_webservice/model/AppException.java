@@ -1,6 +1,12 @@
 package fr.imta.acapela_webservice.model;
 
 /// AppException.java
+/**
+ * Base class of every business error in the application.
+ *
+ * <p>Each subclass carries the HTTP status code and the message that the handlers
+ * send back to the client when they catch it.
+ */
 public abstract class AppException extends RuntimeException {
     private final int statusCode;
 
